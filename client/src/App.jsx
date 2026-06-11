@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 // PAGES
 import Login from "./pages/Login"; 
@@ -11,24 +13,34 @@ import Employees from "./pages/Employees";
 import AdminStats from "./components/AdminStats";
 import AdminTaskManager from "./components/AdminTaskManager";
 
+const API = import.meta.env.VITE_API_URL;
+
 // ========== PROTECTED ROUTE COMPONENT ==========
 function ProtectedRoute({ children, requiredAdmin = false }) {
   const employeeId = localStorage.getItem("employeeId");
-  const rawIsAdmin = localStorage.getItem("isAdmin");
-  const isAdminCheck = rawIsAdmin === "true";
+  const storedIsAdmin = localStorage.getItem("isAdmin");
+  const needsVerification = storedIsAdmin === "true";
 
-  if (!employeeId) {
-    return <Navigate to="/login" replace />;
-  }
+  const [isAdminCheck, setIsAdminCheck] = useState(
+    needsVerification ? null : false
+  );
 
-  if (requiredAdmin && !isAdminCheck) {
-    return <Navigate to="/login" replace />;
-  }
+  useEffect(() => {
+    if (!employeeId || !needsVerification) return;
 
-  if (!requiredAdmin && isAdminCheck) {
-    return <Navigate to="/admin" replace />;
-  }
+    axios.get(`${API}/employees/${employeeId}`)
+      .then(res => {
+        const actual = res.data.isAdmin === true || res.data.isAdmin === "true";
+        localStorage.setItem("isAdmin", actual ? "true" : "false");
+        setIsAdminCheck(actual);
+      })
+      .catch(() => setIsAdminCheck(true));
+  }, [employeeId, needsVerification]);
 
+  if (!employeeId) return <Navigate to="/login" replace />;
+  if (isAdminCheck === null) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent" /></div>;
+  if (requiredAdmin && !isAdminCheck) return <Navigate to="/login" replace />;
+  if (!requiredAdmin && isAdminCheck) return <Navigate to="/admin" replace />;
   return children;
 }
 

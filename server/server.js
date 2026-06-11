@@ -489,7 +489,7 @@ app.get("/employees", async (req, res) => {
       department: emp.department,
       status: emp.status,
       email: emp.email,
-      isAdmin: emp.isAdmin || false
+      isAdmin: emp.isAdmin === true
     }));
     res.json(employeeList);
   } catch (error) {
@@ -501,7 +501,7 @@ app.get("/employees", async (req, res) => {
       department: emp.department,
       status: emp.status,
       email: emp.email,
-      isAdmin: emp.isAdmin || false
+      isAdmin: emp.isAdmin === true
     }));
     res.json(employeeList);
   }
@@ -525,7 +525,7 @@ app.get("/employees/:id", async (req, res) => {
       department: emp.department,
       status: emp.status,
       email: emp.email,
-      isAdmin: emp.isAdmin || false
+      isAdmin: emp.isAdmin === true
     });
   } catch (error) {
     const empId = req.params.id;
@@ -541,7 +541,7 @@ app.get("/employees/:id", async (req, res) => {
       department: emp.department,
       status: emp.status,
       email: emp.email,
-      isAdmin: emp.isAdmin || false
+      isAdmin: emp.isAdmin === true
     });
   }
 });
@@ -617,7 +617,7 @@ app.put("/employees/:id", async (req, res) => {
       department: employee.department,
       status: employee.status,
       email: employee.email,
-      isAdmin: employee.isAdmin || false
+      isAdmin: employee.isAdmin === true
     });
   } catch (error) {
     res.status(500).json(error);
@@ -668,19 +668,20 @@ app.post("/login", async (req, res) => {
   }
 
   if (user) {
-    const response = {
-      _id: user.id || user._id,
-      id: user.id || user._id,
-      name: user.name,
-      role: user.role,
-      department: user.department,
-      status: user.status,
-      email: user.email,
-      employeeId: user.id || user._id,
-      isAdmin: isAdmin ? "true" : "false"
-    };
+ const response = {
+  _id: user.id || user._id,
+  id: user.id || user._id,
+  name: user.name,
+  role: user.role,
+  department: user.department,
+  status: user.status,
+  email: user.email,
+  employeeId: user.id || user._id,
+  isAdmin: isAdmin
+};
 
     console.log("  LOGIN SUCCESS:", user.name, "(Admin:", isAdmin + ")");
+    console.log("LOGIN RESPONSE:", response);
     res.json(response);
   } else {
     console.log("  LOGIN FAILED: Invalid credentials");
@@ -697,10 +698,10 @@ async function seedEmployees() {
       console.log(` Seeded ${seedData.length} employees into MongoDB`);
     } else {
       console.log(` Employees already in DB: ${count}`);
-      // Fix existing documents missing the isAdmin field
+      // Fix existing documents: ensure isAdmin is stored as boolean, not string
       for (const emp of EMPLOYEES) {
         await Employee.updateOne(
-          { email: emp.email, isAdmin: { $ne: true } },
+          { email: emp.email },
           { $set: { isAdmin: emp.isAdmin === true } }
         );
       }

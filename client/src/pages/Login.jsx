@@ -58,23 +58,27 @@ function Login() {
       console.log("User Name:", response.data.name);
 
       if (response.data) {
+        // Normalize isAdmin (backend may return boolean or string)
+        const isAdminActual = response.data.isAdmin === true || response.data.isAdmin === "true";
+        
         // Store user data
         localStorage.setItem("employeeId", response.data.id || response.data._id);
         localStorage.setItem("employeeName", response.data.name);
         localStorage.setItem("employeeEmail", response.data.email);
         localStorage.setItem("employeeRole", response.data.role);
-        localStorage.setItem("isAdmin", response.data.isAdmin ? "true" : "false");
+        localStorage.setItem("isAdmin", isAdminActual ? "true" : "false");
         
         console.log("=== STORED VALUES ===");
         console.log("employeeId:", localStorage.getItem("employeeId"));
         console.log("isAdmin in localStorage:", localStorage.getItem("isAdmin"));
         console.log("isAdmin type:", typeof localStorage.getItem("isAdmin"));
+        console.log("isAdminActual:", isAdminActual);
         
         // Check if admin and intended role
-        if (response.data.isAdmin === true) {
+        if (isAdminActual) {
           console.log("✅ Admin detected! Redirecting to /admin");
           navigate("/admin");
-        } else if (response.data.isAdmin === false || response.data.isAdmin === undefined) {
+        } else {
           console.log("✅ Regular employee detected! Redirecting to /user");
           if (intendedRole === "admin") {
             setError("You don't have admin access. Please use admin account: admin@workflow.com");
@@ -82,9 +86,6 @@ function Login() {
             setLoading(false);
             return;
           }
-          navigate("/user");
-        } else {
-          console.log("⚠️ Unknown user type, redirecting to user dashboard");
           navigate("/user");
         }
       }
